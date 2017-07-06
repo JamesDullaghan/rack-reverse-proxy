@@ -203,17 +203,19 @@ module RackReverseProxy
       [target_response.status, response_headers, target_response.body]
     end
 
-    alias_method :proxy_original, :proxy
-
     def proxy
       return app.call(env) if uri.nil?
+      return https_redirect if need_https_redirect?
 
       if options[:custom_response]
         response = options[:custom_response].call(source_request)
         return response if response
       end
 
-      proxy_original
+      setup_request
+      setup_response_headers
+
+      transform_response(rack_response)
     end
 
     def transform_response(response)
